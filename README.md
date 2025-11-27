@@ -7,32 +7,32 @@ This version is for old Kafka implementations with Zookeeeper.
 
 ### Producer Capabilities
 
-- ✅ Send single JSON messages on-demand
-- ✅ Send batch messages with configurable count
-- ✅ Performance metrics (throughput, latency, P95)
-- ✅ Automatic retry and error handling
-- ✅ Message compression (Snappy)
-- ✅ Idempotent producer support
+- Send single JSON messages on-demand
+- Send batch messages with configurable count
+- Performance metrics (throughput, latency, P95)
+- Automatic retry and error handling
+- Message compression (Snappy)
+- Idempotent producer support
 
 ### Consumer Capabilities
 
-- ✅ Multiple concurrent consumers
-- ✅ Flexible consumer group assignment
+- Multiple concurrent consumers
+- Flexible consumer group assignment
   - Same group = load balancing (parallel processing)
   - Different groups = broadcast (each gets all messages)
-- ✅ Real-time message consumption
-- ✅ Offset management (manual commit, seek)
-- ✅ Consumer lag tracking
-- ✅ Processing time metrics
+- Real-time message consumption
+- Offset management (manual commit, seek)
+- Consumer lag tracking
+- Processing time metrics
 
 ### Testing Features
 
-- ✅ Performance metrics (messages/sec, latency)
-- ✅ Error handling and retry scenarios
-- ✅ Offset management (seek to offset, beginning, end)
-- ✅ Manual and automatic offset commit
-- ✅ Interactive console menu
-- ✅ Configurable via appsettings.json
+- Performance metrics (messages/sec, latency)
+- Error handling and retry scenarios
+- Offset management (seek to offset, beginning, end)
+- Manual and automatic offset commit
+- Interactive console menu
+- Configurable via appsettings.json
 
 ## Prerequisites
 

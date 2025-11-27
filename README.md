@@ -1,10 +1,12 @@
 # Kafka Testing Application - .NET 10.0
 
 A comprehensive Kafka testing application built with .NET 10.0 that supports producing and multi-consuming messages with flexible consumer group configurations.
+This version is for old Kafka implementations with Zookeeeper.
 
 ## Features
 
 ### Producer Capabilities
+
 - ✅ Send single JSON messages on-demand
 - ✅ Send batch messages with configurable count
 - ✅ Performance metrics (throughput, latency, P95)
@@ -13,6 +15,7 @@ A comprehensive Kafka testing application built with .NET 10.0 that supports pro
 - ✅ Idempotent producer support
 
 ### Consumer Capabilities
+
 - ✅ Multiple concurrent consumers
 - ✅ Flexible consumer group assignment
   - Same group = load balancing (parallel processing)
@@ -23,6 +26,7 @@ A comprehensive Kafka testing application built with .NET 10.0 that supports pro
 - ✅ Processing time metrics
 
 ### Testing Features
+
 - ✅ Performance metrics (messages/sec, latency)
 - ✅ Error handling and retry scenarios
 - ✅ Offset management (seek to offset, beginning, end)
@@ -51,6 +55,7 @@ docker-compose ps
 ```
 
 Expected output:
+
 ```
 NAME         IMAGE                              STATUS
 kafka        confluentinc/cp-kafka:7.8.0        Up (healthy)
@@ -104,16 +109,19 @@ Edit `appsettings.json` to customize Kafka settings:
 ### Example 1: Basic Producer-Consumer Test
 
 1. **Start the application**
+
    ```bash
    dotnet run
    ```
 
 2. **Start a consumer** (Menu option 5)
+
    - Topic: `test-topic` (or press Enter for default)
    - Consumer Group: `group-1`
    - Consumer ID: `consumer-1`
 
 3. **Send a single message** (Menu option 1)
+
    - Topic: `test-topic`
    - Content: `Hello Kafka!`
 
@@ -124,11 +132,13 @@ Edit `appsettings.json` to customize Kafka settings:
 Test parallel processing with multiple consumers in the same group:
 
 1. **Start Consumer 1** (Option 5)
+
    - Topic: `test-topic`
    - Group: `group-1`
    - ID: `consumer-1`
 
 2. **Start Consumer 2** (Option 5)
+
    - Topic: `test-topic`
    - Group: `group-1` (same group!)
    - ID: `consumer-2`
@@ -143,11 +153,13 @@ Test parallel processing with multiple consumers in the same group:
 Test broadcasting where each consumer gets all messages:
 
 1. **Start Consumer 1** (Option 5)
+
    - Topic: `test-topic`
    - Group: `group-A`
    - ID: `consumer-1`
 
 2. **Start Consumer 2** (Option 5)
+
    - Topic: `test-topic`
    - Group: `group-B` (different group!)
    - ID: `consumer-2`
@@ -178,24 +190,24 @@ Test seeking to different positions:
 
 ## Menu Options Reference
 
-| Option | Description |
-|--------|-------------|
-| 1 | Send a single message to a topic |
-| 2 | Send batch messages (specify count) |
-| 3 | View producer metrics (sent, failed, latency) |
-| 4 | Reset producer metrics to zero |
-| 5 | Start a new consumer (specify topic, group, ID) |
-| 6 | Stop a specific consumer |
-| 7 | List all active consumers with status |
-| 8 | View detailed metrics for a specific consumer |
-| 9 | View metrics for all consumers in a table |
-| 10 | Seek consumer to a specific offset |
-| 11 | Seek consumer to the beginning of the topic |
-| 12 | Seek consumer to the end of the topic |
-| 13 | View aggregate metrics (producer + all consumers) |
-| 14 | View current configuration from appsettings.json |
-| 15 | Stop all running consumers |
-| 0 | Exit application (gracefully stops all consumers) |
+| Option | Description                                       |
+| ------ | ------------------------------------------------- |
+| 1      | Send a single message to a topic                  |
+| 2      | Send batch messages (specify count)               |
+| 3      | View producer metrics (sent, failed, latency)     |
+| 4      | Reset producer metrics to zero                    |
+| 5      | Start a new consumer (specify topic, group, ID)   |
+| 6      | Stop a specific consumer                          |
+| 7      | List all active consumers with status             |
+| 8      | View detailed metrics for a specific consumer     |
+| 9      | View metrics for all consumers in a table         |
+| 10     | Seek consumer to a specific offset                |
+| 11     | Seek consumer to the beginning of the topic       |
+| 12     | Seek consumer to the end of the topic             |
+| 13     | View aggregate metrics (producer + all consumers) |
+| 14     | View current configuration from appsettings.json  |
+| 15     | Stop all running consumers                        |
+| 0      | Exit application (gracefully stops all consumers) |
 
 ## Project Structure
 
@@ -242,6 +254,7 @@ dotnet test --logger "console;verbosity=detailed"
 ### Issue: Cannot connect to Kafka
 
 **Solution:**
+
 1. Ensure Docker containers are running:
    ```bash
    docker-compose ps
@@ -259,6 +272,7 @@ dotnet test --logger "console;verbosity=detailed"
 ### Issue: Consumer not receiving messages
 
 **Possible causes:**
+
 1. Check if topic exists in Kafka UI (`http://localhost:8080`)
 2. Verify consumer group and offset position
 3. Try seeking to beginning (Option 11)
@@ -267,6 +281,7 @@ dotnet test --logger "console;verbosity=detailed"
 ### Issue: Port already in use
 
 **Solution:**
+
 ```bash
 # Change ports in docker-compose.yml
 # Default ports: 9092, 29092, 2181, 8080
@@ -275,6 +290,7 @@ dotnet test --logger "console;verbosity=detailed"
 ### Issue: Messages not balanced between consumers
 
 **Check:**
+
 1. Consumers are in the **same group** (for load balancing)
 2. Topic has multiple partitions (default: 1 partition)
 3. Use Kafka UI to create topic with multiple partitions
@@ -301,6 +317,7 @@ exit
 ### Monitoring Consumer Lag
 
 Use Option 9 to view all consumer metrics, including lag:
+
 - **Lag = 0**: Consumer is caught up
 - **Lag > 0**: Consumer is behind by N messages
 
@@ -316,6 +333,7 @@ Use Option 9 to view all consumer metrics, including lag:
 ## Architecture Highlights
 
 ### Producer Service
+
 - Async message production
 - Built-in retry logic
 - Delivery confirmation
@@ -323,6 +341,7 @@ Use Option 9 to view all consumer metrics, including lag:
 - Batch sending with throughput calculation
 
 ### Consumer Service
+
 - Async message consumption
 - Manual offset commit control
 - Error handling and recovery
@@ -330,6 +349,7 @@ Use Option 9 to view all consumer metrics, including lag:
 - Consumer lag tracking
 
 ### Consumer Manager
+
 - Thread-safe consumer lifecycle management
 - Support for multiple concurrent consumers
 - Dynamic consumer group assignment
@@ -342,6 +362,7 @@ This is a testing application for educational and development purposes.
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section
 2. View Kafka logs: `docker-compose logs kafka`
 3. Check application logs in console output

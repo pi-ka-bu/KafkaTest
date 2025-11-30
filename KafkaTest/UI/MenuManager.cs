@@ -153,13 +153,21 @@ public class MenuManager
         if (string.IsNullOrWhiteSpace(topic))
             topic = _config.DefaultTopic;
 
+        Console.Write("Enter partition number (or press Enter for auto-assign): ");
+        var partitionInput = Console.ReadLine()?.Trim();
+        int? partition = null;
+        if (!string.IsNullOrWhiteSpace(partitionInput) && int.TryParse(partitionInput, out var p) && p >= 0)
+        {
+            partition = p;
+        }
+
         Console.Write("Enter message content: ");
         var content = Console.ReadLine()?.Trim();
         if (string.IsNullOrWhiteSpace(content))
             content = "Test message";
 
         var message = new TestMessage(content, 1);
-        await _producer.ProduceAsync(topic, message);
+        await _producer.ProduceAsync(topic, message, partition);
     }
 
     private async Task SendBatchMessages()
@@ -168,6 +176,14 @@ public class MenuManager
         var topic = Console.ReadLine()?.Trim();
         if (string.IsNullOrWhiteSpace(topic))
             topic = _config.DefaultTopic;
+
+        Console.Write("Enter partition number (or press Enter for auto-assign): ");
+        var partitionInput = Console.ReadLine()?.Trim();
+        int? partition = null;
+        if (!string.IsNullOrWhiteSpace(partitionInput) && int.TryParse(partitionInput, out var p) && p >= 0)
+        {
+            partition = p;
+        }
 
         Console.Write("Enter number of messages: ");
         if (!int.TryParse(Console.ReadLine(), out var count) || count <= 0)
@@ -181,7 +197,7 @@ public class MenuManager
         if (string.IsNullOrWhiteSpace(prefix))
             prefix = "Batch message";
 
-        await _producer.ProduceBatchAsync(topic, count, prefix);
+        await _producer.ProduceBatchAsync(topic, count, prefix, partition);
     }
 
     private void ViewProducerMetrics()
@@ -218,7 +234,23 @@ public class MenuManager
             WriteColoredLine.WriteColorLine($"Using auto-generated ID: {consumerId}");
         }
 
-        await _consumerManager.StartConsumerAsync(topic, group, consumerId);
+        Console.Write("Enter partition(s) comma-separated (or press Enter for all): ");
+        var partitionInput = Console.ReadLine()?.Trim();
+        int[]? partitions = null;
+        if (!string.IsNullOrWhiteSpace(partitionInput))
+        {
+            partitions = partitionInput.Split(',')
+                .Select(p => int.TryParse(p.Trim(), out var partition) && partition >= 0 ? partition : -1)
+                .Where(p => p >= 0)
+                .ToArray();
+
+            if (partitions.Length == 0)
+                partitions = null;
+            else
+                WriteColoredLine.WriteColorLine($"Will assign partitions: [{string.Join(", ", partitions)}]");
+        }
+
+        await _consumerManager.StartConsumerAsync(topic, group, consumerId, partitions);
     }
 
     private void StopConsumer()

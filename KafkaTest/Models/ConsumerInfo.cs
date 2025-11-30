@@ -10,6 +10,7 @@ public class ConsumerInfo
     public DateTime? LastMessageTimestamp { get; set; }
     public DateTime StartedAt { get; set; }
     public long ProcessingTimeMs { get; set; }
+    public int[]? AssignedPartitions { get; set; }  // null = all partitions, array = specific partitions
 
     public ConsumerInfo(string consumerId, string consumerGroup, string topic)
     {
@@ -25,6 +26,9 @@ public class ConsumerInfo
     {
         var status = IsRunning ? "RUNNING" : "STOPPED";
         var lastMsg = LastMessageTimestamp?.ToString("HH:mm:ss") ?? "N/A";
-        return $"[{status}] {ConsumerId} | Group: {ConsumerGroup} | Topic: {Topic} | Messages: {MessageCount} | Last: {lastMsg}";
+        var partitionsInfo = AssignedPartitions != null
+            ? $"Partitions: [{string.Join(", ", AssignedPartitions)}]"
+            : "Partitions: [All]";
+        return $"[{status}] {ConsumerId} | Group: {ConsumerGroup} | Topic: {Topic} | {partitionsInfo} | Messages: {MessageCount} | Last: {lastMsg}";
     }
 }

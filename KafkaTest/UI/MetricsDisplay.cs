@@ -32,6 +32,12 @@ public static class MetricsDisplay
         WriteColoredLine.WriteColorLine("═══════════════════════════════════════════════════════");
         WriteColoredLine.WriteColorLine($"  Consumer ID:         {metrics.ConsumerId}");
         WriteColoredLine.WriteColorLine($"  Consumer Group:      {metrics.ConsumerGroup}");
+
+        var partitionsInfo = metrics.AssignedPartitions != null
+            ? $"[{string.Join(", ", metrics.AssignedPartitions)}] (manual)"
+            : "[All] (subscribed)";
+        WriteColoredLine.WriteColorLine($"  Assigned Partitions: {partitionsInfo}");
+
         WriteColoredLine.WriteColorLine($"  Messages Consumed:   {metrics.MessagesConsumed}");
         WriteColoredLine.WriteColorLine($"  Errors:              {metrics.ErrorsCount}", ConsoleColor.Yellow, ConsoleColor.DarkRed);
         WriteColoredLine.WriteColorLine($"  Avg Processing:      {metrics.AverageProcessingTimeMs:F2} ms");

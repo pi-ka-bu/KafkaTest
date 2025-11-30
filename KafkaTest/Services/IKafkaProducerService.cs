@@ -4,8 +4,8 @@ namespace KafkaTest.Services;
 
 public interface IKafkaProducerService : IDisposable
 {
-    Task<bool> ProduceAsync(string topic, TestMessage message);
-    Task<int> ProduceBatchAsync(string topic, int count, string contentPrefix = "Test message");
+    Task<bool> ProduceAsync(string topic, TestMessage message, int? partition = null);
+    Task<int> ProduceBatchAsync(string topic, int count, string contentPrefix = "Test message", int? partition = null);
     ProducerMetrics GetMetrics();
     void ResetMetrics();
 }

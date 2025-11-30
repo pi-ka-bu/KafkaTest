@@ -35,7 +35,7 @@ public class KafkaProducerService : IKafkaProducerService
             .Build();
     }
 
-    public async Task<bool> ProduceAsync(string topic, TestMessage message)
+    public async Task<bool> ProduceAsync(string topic, TestMessage message, int? partition = null)
     {
         var sw = Stopwatch.StartNew();
         try
@@ -48,7 +48,19 @@ public class KafkaProducerService : IKafkaProducerService
                 Timestamp = new Timestamp(message.Timestamp)
             };
 
-            var result = await _producer.ProduceAsync(topic, kafkaMessage);
+            DeliveryResult<string, string> result;
+            if (partition.HasValue)
+            {
+                // Send to specific partition
+                var topicPartition = new TopicPartition(topic, new Partition(partition.Value));
+                result = await _producer.ProduceAsync(topicPartition, kafkaMessage);
+            }
+            else
+            {
+                // Auto-assign partition based on key
+                result = await _producer.ProduceAsync(topic, kafkaMessage);
+            }
+
             sw.Stop();
 
             lock (_metricsLock)
@@ -59,7 +71,8 @@ public class KafkaProducerService : IKafkaProducerService
                 UpdateLatencyMetrics();
             }
 
-            WriteColoredLine.WriteColorLine($"[PRODUCER] ✓ Message sent to {topic} | Partition: {result.Partition.Value} | " +
+            var partitionInfo = partition.HasValue ? $"Partition: {result.Partition.Value} (specified)" : $"Partition: {result.Partition.Value} (auto)";
+            WriteColoredLine.WriteColorLine($"[PRODUCER] ✓ Message sent to {topic} | {partitionInfo} | " +
                             $"Offset: {result.Offset.Value} | Latency: {sw.Elapsed.TotalMilliseconds:F2}ms");
             return true;
         }
@@ -76,16 +89,17 @@ public class KafkaProducerService : IKafkaProducerService
         }
     }
 
-    public async Task<int> ProduceBatchAsync(string topic, int count, string contentPrefix = "Test message")
+    public async Task<int> ProduceBatchAsync(string topic, int count, string contentPrefix = "Test message", int? partition = null)
     {
-        WriteColoredLine.WriteColorLine($"[PRODUCER] Sending {count} messages to {topic}...");
+        var partitionMsg = partition.HasValue ? $" to partition {partition.Value}" : "";
+        WriteColoredLine.WriteColorLine($"[PRODUCER] Sending {count} messages to {topic}{partitionMsg}...");
         var successCount = 0;
         var sw = Stopwatch.StartNew();
 
         for (int i = 1; i <= count; i++)
         {
             var message = new TestMessage($"{contentPrefix} {i}", i);
-            if (await ProduceAsync(topic, message))
+            if (await ProduceAsync(topic, message, partition))
             {
                 successCount++;
             }

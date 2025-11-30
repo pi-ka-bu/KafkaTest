@@ -15,7 +15,7 @@ public class ConsumerManager : IDisposable
         _config = config;
     }
 
-    public async Task<bool> StartConsumerAsync(string topic, string consumerGroup, string consumerId)
+    public async Task<bool> StartConsumerAsync(string topic, string consumerGroup, string consumerId, int[]? partitions = null)
     {
         if (_consumers.ContainsKey(consumerId))
         {
@@ -27,7 +27,7 @@ public class ConsumerManager : IDisposable
         {
             var consumer = new KafkaConsumerService(_config);
             var cts = new CancellationTokenSource();
-            var instance = new ConsumerInstance(consumer, topic, consumerGroup);
+            var instance = new ConsumerInstance(consumer, topic, consumerGroup, partitions);
 
             _consumers.TryAdd(consumerId, instance);
             _cancellationTokens.TryAdd(consumerId, cts);
@@ -37,7 +37,7 @@ public class ConsumerManager : IDisposable
             {
                 try
                 {
-                    await consumer.StartAsync(topic, consumerGroup, consumerId, cts.Token);
+                    await consumer.StartAsync(topic, consumerGroup, consumerId, cts.Token, partitions);
                 }
                 catch (Exception ex)
                 {
@@ -113,7 +113,8 @@ public class ConsumerManager : IDisposable
                 IsRunning = instance.Consumer.IsRunning,
                 MessageCount = (int)metrics.MessagesConsumed,
                 LastMessageTimestamp = metrics.LastConsumedTimestamp,
-                ProcessingTimeMs = (long)metrics.AverageProcessingTimeMs
+                ProcessingTimeMs = (long)metrics.AverageProcessingTimeMs,
+                AssignedPartitions = instance.AssignedPartitions
             };
 
             activeConsumers.Add(info);
@@ -163,12 +164,14 @@ public class ConsumerManager : IDisposable
         public IKafkaConsumerService Consumer { get; }
         public string Topic { get; }
         public string ConsumerGroup { get; }
+        public int[]? AssignedPartitions { get; }
 
-        public ConsumerInstance(IKafkaConsumerService consumer, string topic, string consumerGroup)
+        public ConsumerInstance(IKafkaConsumerService consumer, string topic, string consumerGroup, int[]? assignedPartitions = null)
         {
             Consumer = consumer;
             Topic = topic;
             ConsumerGroup = consumerGroup;
+            AssignedPartitions = assignedPartitions;
         }
     }
 }

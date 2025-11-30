@@ -4,7 +4,7 @@ namespace KafkaTest.Services;
 
 public interface IKafkaConsumerService : IDisposable
 {
-    Task StartAsync(string topic, string consumerGroup, string consumerId, CancellationToken cancellationToken);
+    Task StartAsync(string topic, string consumerGroup, string consumerId, CancellationToken cancellationToken, int[]? partitions = null);
     void Stop();
     ConsumerMetrics GetMetrics();
     void ResetMetrics();
@@ -27,10 +27,14 @@ public class ConsumerMetrics
     public long CurrentOffset { get; set; }
     public long? HighWatermarkOffset { get; set; }
     public long Lag => HighWatermarkOffset.HasValue ? HighWatermarkOffset.Value - CurrentOffset : 0;
+    public int[]? AssignedPartitions { get; set; }  // null = all partitions (subscribed), array = specific partitions (assigned)
 
     public override string ToString()
     {
-        return $"[{ConsumerId}] Group: {ConsumerGroup} | Consumed: {MessagesConsumed} | " +
+        var partitionsInfo = AssignedPartitions != null
+            ? $"Partitions: [{string.Join(", ", AssignedPartitions)}]"
+            : "Partitions: [All]";
+        return $"[{ConsumerId}] Group: {ConsumerGroup} | {partitionsInfo} | Consumed: {MessagesConsumed} | " +
                $"Errors: {ErrorsCount} | Avg Processing: {AverageProcessingTimeMs:F2}ms | " +
                $"Lag: {Lag} | Offset: {CurrentOffset}";
     }

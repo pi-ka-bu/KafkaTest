@@ -15,6 +15,7 @@ public class KafkaConsumerService : IKafkaConsumerService
     private readonly List<double> _processingTimes = new();
     private bool _isRunning;
     private string _currentTopic = string.Empty;
+    private int[]? _assignedPartitions;
 
     public bool IsRunning => _isRunning;
     public string ConsumerId { get; private set; } = string.Empty;
@@ -25,7 +26,7 @@ public class KafkaConsumerService : IKafkaConsumerService
         _config = config;
     }
 
-    public async Task StartAsync(string topic, string consumerGroup, string consumerId, CancellationToken cancellationToken)
+    public async Task StartAsync(string topic, string consumerGroup, string consumerId, CancellationToken cancellationToken, int[]? partitions = null)
     {
         if (_isRunning)
         {
@@ -35,6 +36,7 @@ public class KafkaConsumerService : IKafkaConsumerService
         ConsumerId = consumerId;
         ConsumerGroup = consumerGroup;
         _currentTopic = topic;
+        _assignedPartitions = partitions;
 
         var consumerConfig = new ConsumerConfig
         {
@@ -68,16 +70,32 @@ public class KafkaConsumerService : IKafkaConsumerService
             })
             .Build();
 
-        _consumer.Subscribe(topic);
+        // Choose between Subscribe (consumer group coordination) or Assign (manual partition assignment)
+        if (partitions != null && partitions.Length > 0)
+        {
+            // Manual partition assignment - NO consumer group coordination
+            var topicPartitions = partitions.Select(p => new TopicPartition(topic, new Partition(p))).ToArray();
+            _consumer.Assign(topicPartitions);
+            WriteColoredLine.WriteColorLine($"[CONSUMER {consumerId}] Manually assigned to partitions: [{string.Join(", ", partitions)}]");
+        }
+        else
+        {
+            // Subscribe to all partitions - consumer group handles rebalancing
+            _consumer.Subscribe(topic);
+            WriteColoredLine.WriteColorLine($"[CONSUMER {consumerId}] Subscribed to all partitions (consumer group coordination)");
+        }
+
         _isRunning = true;
 
         lock (_metricsLock)
         {
             _metrics.ConsumerId = consumerId;
             _metrics.ConsumerGroup = consumerGroup;
+            _metrics.AssignedPartitions = partitions;
         }
 
-        WriteColoredLine.WriteColorLine($"[CONSUMER {consumerId}] Started | Group: {consumerGroup} | Topic: {topic}");
+        var partitionsMsg = partitions != null ? $" | Partitions: [{string.Join(", ", partitions)}]" : " | Partitions: [All]";
+        WriteColoredLine.WriteColorLine($"[CONSUMER {consumerId}] Started | Group: {consumerGroup} | Topic: {topic}{partitionsMsg}");
 
         await Task.Run(() => ConsumeLoop(cancellationToken), cancellationToken);
     }
@@ -240,7 +258,8 @@ public class KafkaConsumerService : IKafkaConsumerService
                 AverageProcessingTimeMs = _metrics.AverageProcessingTimeMs,
                 LastConsumedTimestamp = _metrics.LastConsumedTimestamp,
                 CurrentOffset = _metrics.CurrentOffset,
-                HighWatermarkOffset = _metrics.HighWatermarkOffset
+                HighWatermarkOffset = _metrics.HighWatermarkOffset,
+                AssignedPartitions = _metrics.AssignedPartitions
             };
         }
     }
